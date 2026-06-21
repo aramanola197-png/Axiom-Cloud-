@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/global.css" />
+</head>
+<body>
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px">
+    <div style="width:64px;height:64px;border-radius:16px;background:rgba(220,38,38,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:24px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:10px"><%= title %></h1>
+    <p style="font-family:var(--font-body);color:var(--gray);margin-bottom:28px;max-width:380px"><%= message %></p>
+    <a href="/" class="btn btn-purple">Back to Home</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Axiom Cloud — Think. Research. Build. Deploy. The AI-native platform that researches, teaches, builds, and deploys your ideas." />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/landing.css" />
+</head>
+<body>
+
+<!-- MOBILE MENU -->
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
+<div class="mobile-drawer" id="mobileDrawer">
+  <button class="mobile-drawer-close" id="mobileDrawerClose">&times;</button>
+  <a href="#features">Features</a>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#pricing">Pricing</a>
+  <a href="/auth/signin">Sign In</a>
+  <a href="/auth/signup" style="color:var(--purple)">Get Started →</a>
+</div>
+
+<!-- NAV -->
+<nav class="landing-nav" id="landingNav">
+  <div class="nav-container">
+    <a href="/" class="nav-logo">
+      <img src="/images/logo.png" alt="Axiom Cloud" class="nav-logo-img" onerror="this.style.display='none'" />
+      <span class="nav-logo-text">Axiom<span class="nav-logo-dot">.</span>Cloud</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/auth/signin" class="btn btn-ghost btn-sm">Sign In</a>
+      <a href="/auth/signup" class="btn btn-red btn-sm">Get Started</a>
+    </div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="particles"></canvas>
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+  <div class="hero-container">
+    <div class="hero-content">
+      <div class="hero-tag reveal">AI-Native Platform</div>
+      <h1 class="hero-title reveal reveal-1">
+        Think. Research.<br>Build. <span class="red">Deploy.</span>
+      </h1>
+      <p class="hero-sub reveal reveal-2">
+        Axiom Cloud turns any idea into understanding, then into a real, working project. Research markets, learn what you don't know, generate the build, and ship it — all in one place.
+      </p>
+      <div class="hero-ctas reveal reveal-3">
+        <a href="/auth/signup" class="btn btn-red">Start Building Free</a>
+        <a href="#how-it-works" class="btn btn-ghost">See How It Works</a>
+      </div>
+      <div class="reveal reveal-3">
+        <div class="hero-search-wrap" onclick="window.location.href='/auth/signup'">
+          <svg class="hero-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span class="hero-search-text">What do you want to build or understand?</span>
+        </div>
+        <div class="hero-examples">
+          <span class="hero-example">Build a fintech startup</span>
+          <span class="hero-example">Learn quantum computing</span>
+          <span class="hero-example">Design an AI agent</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual reveal reveal-2">
+      <svg id="knowledge-graph" viewBox="0 0 460 460"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label" style="justify-content:center">Capabilities</span>
+      <h2 class="section-title reveal">Everything an idea needs</h2>
+      <p class="section-desc reveal reveal-1">From the first question to a deployed product — four AI systems working together inside one workspace.</p>
+    </div>
+    <div class="features-grid">
+
+      <div class="feature-card reveal">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <div class="feature-title">Research Studio</div>
+        <p class="feature-desc">Market sizing, competitor analysis, trends, and citations — structured into something you can actually use, not just read.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-1">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div class="feature-title">AI Tutor</div>
+        <p class="feature-desc">Learn the business concepts, tech stack, and industry terms behind your idea — explained at your level, not a textbook's.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-2">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg></div>
+        <div class="feature-title">AI Builder</div>
+        <p class="feature-desc">Describe what you want built. Get a real project architecture, file structure, and a downloadable, working codebase.</p>
+      </div>
+
+      <div class="feature-card reveal reveal-3">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="feature-title">AI Board Room</div>
+        <p class="feature-desc">Pitch your idea to an Investor, a CTO, and a Product Manager. Three AI personalities. Real pressure. An honest verdict.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works" style="background:var(--bg2)">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label" style="justify-content:center">Process</span>
+      <h2 class="section-title reveal">From idea to deployed, in order</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-title">Research</div>
+        <p class="step-desc">Understand the market before you build anything.</p>
+      </div>
+      <div class="step reveal reveal-1">
+        <div class="step-num">02</div>
+        <div class="step-title">Learn</div>
+        <p class="step-desc">Fill the knowledge gaps standing between you and the build.</p>
+      </div>
+      <div class="step reveal reveal-2">
+        <div class="step-num">03</div>
+        <div class="step-title">Build</div>
+        <p class="step-desc">Generate the real architecture and downloadable codebase.</p>
+      </div>
+      <div class="step reveal reveal-3">
+        <div class="step-num">04</div>
+        <div class="step-title">Deploy</div>
+        <p class="step-desc">Ship it with step-by-step guidance, not guesswork.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label" style="justify-content:center">Pricing</span>
+      <h2 class="section-title reveal">Start free. Scale when ready.</h2>
+    </div>
+    <div class="features-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="feature-card reveal">
+        <div class="badge badge-gray mb-16">Free</div>
+        <div style="font-size:32px;font-weight:800;margin-bottom:4px">$0</div>
+        <p class="feature-desc mb-16">For exploring ideas and learning.</p>
+        <a href="/auth/signup" class="btn btn-ghost w-full" style="justify-content:center">Get Started</a>
+      </div>
+      <div class="feature-card reveal reveal-1" style="border-color:rgba(139,92,246,0.3)">
+        <div class="badge badge-purple mb-16">Pro</div>
+        <div style="font-size:32px;font-weight:800;margin-bottom:4px">$29<span style="font-size:14px;color:var(--gray)">/mo</span></div>
+        <p class="feature-desc mb-16">For builders shipping real projects.</p>
+        <a href="/auth/signup" class="btn btn-red w-full" style="justify-content:center">Start Pro</a>
+      </div>
+      <div class="feature-card reveal reveal-2">
+        <div class="badge badge-gray mb-16">Enterprise</div>
+        <div style="font-size:32px;font-weight:800;margin-bottom:4px">Custom</div>
+        <p class="feature-desc mb-16">For teams building at scale.</p>
+        <a href="mailto:hello@axiomcloud.com" class="btn btn-ghost w-full" style="justify-content:center">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="section-container">
+    <h2 class="cta-title reveal">Your next idea deserves more than a guess.</h2>
+    <p class="cta-sub reveal reveal-1">Research it. Learn it. Build it. Deploy it.</p>
+    <div class="reveal reveal-2">
+      <a href="/auth/signup" class="btn btn-red">Start Building Free</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="landing-footer">
+  <div class="section-container">
+    <div class="footer-logo">Axiom<span style="color:var(--purple)">.</span>Cloud</div>
+    <div class="footer-tagline">Think. Research. Build. Deploy.</div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/auth/signin">Sign In</a>
+      <a href="mailto:hello@axiomcloud.com">Contact</a>
+    </div>
+    <div class="footer-copy">&copy; <%= new Date().getFullYear() %> Axiom Cloud. All rights reserved.</div>
+  </div>
+</footer>
+
+<script src="/js/particles.js"></script>
+<script src="/js/knowledge-graph.js"></script>
+<script src="/js/landing.js"></script>
+</body>
+</html>

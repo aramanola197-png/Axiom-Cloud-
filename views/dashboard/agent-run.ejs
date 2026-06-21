@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 class="page-title"><%= agent.name %></h1>
+          <p class="page-sub"><%= agent.description %></p>
+        </div>
+        <a href="/marketplace" class="btn btn-ghost btn-sm">← Back to Marketplace</a>
+      </div>
+
+      <div class="card mb-24">
+        <div class="section-label">Run Agent</div>
+        <form id="agentForm" style="display:flex;flex-direction:column;gap:14px">
+          <textarea class="textarea" id="agentInput" placeholder="<%= agent.placeholder %>" style="min-height:120px" required></textarea>
+          <button type="submit" class="btn btn-purple" id="agentSubmitBtn" style="align-self:flex-start">Run Agent</button>
+        </form>
+      </div>
+
+      <div id="outputCard" class="card mb-24" style="display:none">
+        <div class="section-label">Output</div>
+        <div class="prose" id="outputContent"></div>
+      </div>
+
+      <% if (runs && runs.length) { %>
+        <div class="card">
+          <div class="section-label">Recent Runs</div>
+          <% runs.forEach(function(run) { %>
+            <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+              <div class="text-xs text-gray mb-8"><%= new Date(run.createdAt).toLocaleString() %></div>
+              <div class="text-sm mb-8" style="color:var(--white);font-family:var(--font-ui);font-weight:500"><%= run.input.slice(0, 120) %><%= run.input.length > 120 ? '...' : '' %></div>
+              <div class="prose run-output" data-content="<%= encodeURIComponent(run.output) %>" style="font-size:13px"></div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  document.querySelectorAll('.run-output').forEach(el => {
+    el.innerHTML = DOMPurify.sanitize(marked.parse(decodeURIComponent(el.dataset.content)));
+  });
+
+  const agentForm = document.getElementById('agentForm');
+  const agentInput = document.getElementById('agentInput');
+  const agentSubmitBtn = document.getElementById('agentSubmitBtn');
+  const outputCard = document.getElementById('outputCard');
+  const outputContent = document.getElementById('outputContent');
+
+  agentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = agentInput.value.trim();
+    if (!input) return;
+    agentSubmitBtn.disabled = true;
+    agentSubmitBtn.innerHTML = '<div class="spinner"></div> Running...';
+    outputCard.style.display = 'none';
+    try {
+      const res = await fetch('/marketplace/run/<%= agent.id %>', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input, workspaceId: window.currentWorkspaceId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        outputContent.innerHTML = DOMPurify.sanitize(marked.parse(data.output));
+        outputCard.style.display = 'block';
+      } else {
+        showToast(data.message || 'The agent encountered an issue.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+    agentSubmitBtn.disabled = false;
+    agentSubmitBtn.textContent = 'Run Agent';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+AXIOM CLOUD — ASSET PLACEMENT GUIDE
+=====================================
+
+This folder is where ALL of Axiom Cloud's visual branding lives.
+Drop files in here using the EXACT filenames below — nothing else needs
+to change anywhere in the code. The moment a file appears with the
+correct name, it shows up everywhere in the app automatically.
+
+────────────────────────────────────────────────────────
+1. logo.png   (REQUIRED for full branding — optional to start)
+────────────────────────────────────────────────────────
+Used in: navigation bar, sidebar, sign-in/sign-up pages, emails (via app
+appearance, not embedded in email HTML).
+
+  Recommended size:  512 x 512 px (square)
+  Format:            PNG with transparent background
+  File name:         logo.png   (must be exactly this, lowercase)
+
+If this file is missing, the app shows a clean text wordmark
+("Axiom.Cloud") instead — there is never a broken image icon. The moment
+you add logo.png here, it replaces the text wordmark everywhere, with
+zero code changes.
+
+────────────────────────────────────────────────────────
+2. favicon.png   (ALREADY PROVIDED — replace if you want)
+────────────────────────────────────────────────────────
+Used in: browser tab icon.
+
+  Recommended size:  64 x 64 px (32 x 32 px also works)
+  Format:            PNG, transparent or solid background
+  File name:         favicon.png
+
+A clean default favicon (a purple "A" mark on a dark background) is
+already included so you never see a broken/default browser icon. Replace
+this file with your own branded favicon any time — same filename, no
+code changes needed.
+
+────────────────────────────────────────────────────────
+NOT YET WIRED IN (future phase):
+────────────────────────────────────────────────────────
+A default avatar image and a social-sharing preview image (og-image)
+are natural additions for a future phase, but are not yet connected in
+this version. Right now:
+  • Users without an uploaded photo see a clean purple initials badge
+    (e.g. "JD") instead of any image — never a broken icon.
+  • Shared links use the browser's default link preview behavior.
+
+────────────────────────────────────────────────────────
+NEVER NEEDED:
+────────────────────────────────────────────────────────
+You will never need to open any .js, .ejs, or .css file to "find where
+the logo goes" — every reference to these filenames already exists in
+the code, pointing at this exact folder. Just drop the file in with the
+exact name above.

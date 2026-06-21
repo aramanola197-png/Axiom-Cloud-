@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+
+    <div class="chat-layout">
+      <div class="chat-history-sidebar">
+        <button class="chat-new-btn" onclick="window.location.href='/research'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Research
+        </button>
+        <div class="chat-history-title">History</div>
+        <% if (sessions && sessions.length) { %>
+          <% sessions.forEach(function(s) { %>
+            <a href="/research/session/<%= s._id %>" class="chat-history-item <%= currentSession && currentSession._id.toString() === s._id.toString() ? 'active' : '' %>"><%= s.title %></a>
+          <% }); %>
+        <% } else { %>
+          <p style="font-size:12px;color:var(--gray2);padding:8px 10px;font-family:var(--font-body)">No research yet.</p>
+        <% } %>
+      </div>
+
+      <div class="chat-main">
+        <% if (!currentSession) { %>
+          <div class="chat-empty">
+            <div class="chat-empty-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+            <h2 class="chat-empty-title">Research Studio</h2>
+            <p class="chat-empty-desc">Ask about any market, idea, or industry. Get structured analysis with trends, competitors, and opportunities.</p>
+            <form class="chat-start-form" id="startForm">
+              <div class="chat-start-input-wrap">
+                <input type="text" class="chat-start-input" id="startInput" placeholder="What do you want to research?" required />
+                <button type="submit" class="chat-start-submit" id="startSubmit">
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </form>
+            <div class="chat-suggestions">
+              <span class="chat-suggestion-chip">Build a decentralized exchange</span>
+              <span class="chat-suggestion-chip">Smart farming platform</span>
+              <span class="chat-suggestion-chip">AI-powered fintech app</span>
+              <span class="chat-suggestion-chip">Healthcare startup ideas</span>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="chat-messages" id="chatMessages">
+            <% currentSession.messages.forEach(function(m) { %>
+              <div class="msg <%= m.role %>">
+                <div class="msg-avatar"><%= m.role === 'user' ? (user.username.slice(0,2).toUpperCase()) : 'AI' %></div>
+                <div class="msg-body">
+                  <div class="msg-name"><%= m.role === 'user' ? user.username : 'Research Studio' %></div>
+                  <div class="msg-content prose"><span class="raw-content" data-content="<%= encodeURIComponent(m.content) %>"></span></div>
+                  <% if (m.role === 'assistant' && m.citations && m.citations.length) { %>
+                    <div class="citations-block">
+                      <div class="citations-title">Sources</div>
+                      <div class="citations-list">
+                        <% m.citations.forEach(function(c) { %>
+                          <a href="<%= c.url %>" target="_blank" rel="noopener noreferrer" class="citation-chip">
+                            <span class="citation-title"><%= c.title %></span>
+                            <span class="citation-source"><%= c.source %></span>
+                          </a>
+                        <% }); %>
+                      </div>
+                    </div>
+                  <% } %>
+                  <% if (m.role === 'assistant' && m.mindMap && m.mindMap.nodes && m.mindMap.nodes.length) { %>
+                    <div class="mindmap-block">
+                      <div class="citations-title">Mind Map</div>
+                      <div class="mindmap-canvas-wrap">
+                        <svg class="mindmap-svg" data-mindmap="<%= encodeURIComponent(JSON.stringify(m.mindMap)) %>"></svg>
+                      </div>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrap">
+              <textarea class="chat-input" id="chatInput" placeholder="Ask a follow-up question..." rows="1"></textarea>
+              <button class="chat-send-btn" id="chatSend">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script src="/js/mindmap-render.js"></script>
+<script>
+  const sessionId = <%- currentSession ? `"${currentSession._id}"` : 'null' %>;
+
+  // Render markdown for existing messages
+  document.querySelectorAll('.raw-content').forEach(el => {
+    const content = decodeURIComponent(el.dataset.content);
+    el.parentElement.innerHTML = DOMPurify.sanitize(marked.parse(content));
+  });
+
+  // Render mind maps already saved on page load
+  document.querySelectorAll('.mindmap-svg').forEach(svg => {
+    const data = JSON.parse(decodeURIComponent(svg.dataset.mindmap));
+    renderMindMap(svg, data);
+  });
+
+  const startForm = document.getElementById('startForm');
+  if (startForm) {
+    document.querySelectorAll('.chat-suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.getElementById('startInput').value = chip.textContent;
+      });
+    });
+    startForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = document.getElementById('startInput').value.trim();
+      if (!query) return;
+      const submitBtn = document.getElementById('startSubmit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch('/research/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, workspaceId: window.currentWorkspaceId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = `/research/session/${data.sessionId}`;
+        } else {
+          showToast(data.message || 'Something went wrong.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+        }
+      } catch (err) {
+        showToast('Network error. Please try again.', 'error');
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const chatMessages = document.getElementById('chatMessages');
+
+  if (chatInput) {
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+    });
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    chatSend.addEventListener('click', sendMessage);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function addMessage(role, content, name) {
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    const initials = role === 'user' ? '<%= user.username.slice(0,2).toUpperCase() %>' : 'AI';
+    div.innerHTML = `
+      <div class="msg-avatar">${initials}</div>
+      <div class="msg-body">
+        <div class="msg-name">${name}</div>
+        <div class="msg-content prose">${role === 'assistant' ? DOMPurify.sanitize(marked.parse(content)) : escapeHtml(content)}</div>
+      </div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+  }
+
+  function escapeAttr(str) {
+    return String(str || '').replace(/"/g, '&quot;');
+  }
+
+  function safeUrl(url) {
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
+      return '#';
+    } catch (e) {
+      return '#';
+    }
+  }
+
+  function addCitations(parentBody, citations) {
+    if (!citations || !citations.length) return;
+    const block = document.createElement('div');
+    block.className = 'citations-block';
+    block.innerHTML = `<div class="citations-title">Sources</div><div class="citations-list">${
+      citations.map(c => `<a href="${escapeAttr(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer" class="citation-chip"><span class="citation-title">${escapeHtml(c.title)}</span><span class="citation-source">${escapeHtml(c.source)}</span></a>`).join('')
+    }</div>`;
+    parentBody.appendChild(block);
+  }
+
+  function addMindMap(parentBody, mindMap) {
+    if (!mindMap || !mindMap.nodes || !mindMap.nodes.length) return;
+    const block = document.createElement('div');
+    block.className = 'mindmap-block';
+    block.innerHTML = `<div class="citations-title">Mind Map</div><div class="mindmap-canvas-wrap"><svg class="mindmap-svg"></svg></div>`;
+    parentBody.appendChild(block);
+    renderMindMap(block.querySelector('.mindmap-svg'), mindMap);
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg assistant';
+    div.id = 'typingIndicator';
+    div.innerHTML = `<div class="msg-avatar">AI</div><div class="msg-body"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || !sessionId) return;
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    addMessage('user', message, '<%= user.username %>');
+    addTyping();
+    chatSend.disabled = true;
+    try {
+      const res = await fetch(`/research/message/${sessionId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      document.getElementById('typingIndicator')?.remove();
+      if (data.success) {
+        const div = addMessage('assistant', data.response, 'Research Studio');
+        const body = div.querySelector('.msg-body');
+        addCitations(body, data.citations);
+        addMindMap(body, data.mindMap);
+      } else {
+        showToast(data.message || 'Something went wrong.', 'error');
+      }
+    } catch (err) {
+      document.getElementById('typingIndicator')?.remove();
+      showToast('Network error. Please try again.', 'error');
+    }
+    chatSend.disabled = false;
+  }
+
+  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+</script>
+</body>
+</html>

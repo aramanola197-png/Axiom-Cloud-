@@ -1,0 +1,93 @@
+<!-- SIDEBAR BACKDROP (mobile) -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<aside class="sidebar" id="sidebar">
+  <a href="/dashboard" class="sidebar-logo">
+    <img src="/images/logo.png" alt="" class="sidebar-logo-img" onerror="this.style.display='none'" />
+    <span class="sidebar-logo-text">Axiom<span style="color:var(--purple)">.</span>Cloud</span>
+  </a>
+
+  <nav class="sidebar-nav">
+    <!-- Workspace Switcher -->
+    <div class="workspace-switcher">
+      <button class="workspace-btn" id="workspaceBtn">
+        <span class="workspace-icon-dot">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        </span>
+        <span class="workspace-name" id="currentWorkspaceName">
+          <%= typeof workspaces !== 'undefined' && workspaces.length ? workspaces[0].name : 'My Workspace' %>
+        </span>
+        <svg class="workspace-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="workspace-dropdown" id="workspaceDropdown">
+        <% if (typeof workspaces !== 'undefined' && workspaces.length) { %>
+          <% workspaces.forEach(function(ws, i) { %>
+            <div class="workspace-option <%= i === 0 ? 'active' : '' %>" data-id="<%= ws._id %>" data-name="<%= ws.name %>">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/></svg>
+              <%= ws.name %>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="workspace-option active">My Workspace</div>
+        <% } %>
+        <div class="workspace-create-link" onclick="window.location.href='/workspace'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Workspace
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Overview</div>
+    <a href="/dashboard" class="sidebar-link <%= activeSection === 'dashboard' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      Dashboard
+    </a>
+
+    <div class="sidebar-section-label">AI Systems</div>
+    <a href="/research" class="sidebar-link <%= activeSection === 'research' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      Research Studio
+    </a>
+    <a href="/tutor" class="sidebar-link <%= activeSection === 'tutor' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      AI Tutor
+    </a>
+    <a href="/builder" class="sidebar-link <%= activeSection === 'builder' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
+      AI Builder
+    </a>
+    <a href="/boardroom" class="sidebar-link <%= activeSection === 'boardroom' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Board Room
+    </a>
+
+    <div class="sidebar-section-label">Workspace</div>
+    <a href="/workspace" class="sidebar-link <%= activeSection === 'workspace' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Workspaces
+    </a>
+    <a href="/analytics" class="sidebar-link <%= activeSection === 'analytics' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </a>
+    <a href="/database" class="sidebar-link <%= activeSection === 'database' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      Database Studio
+    </a>
+    <a href="/deployment" class="sidebar-link <%= activeSection === 'deployment' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      Deployment
+    </a>
+    <a href="/marketplace" class="sidebar-link <%= activeSection === 'marketplace' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><path d="M3 3h18l-2 13H5L3 3z"/><path d="M3 3l-1-1"/><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>
+      Marketplace
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="/profile" class="sidebar-link <%= activeSection === 'profile' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile & Settings
+    </a>
+  </div>
+</aside>

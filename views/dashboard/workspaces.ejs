@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 class="page-title">Workspaces</h1>
+          <p class="page-sub">Organize your research, builds, and conversations.</p>
+        </div>
+        <button class="btn btn-purple" id="newWorkspaceBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Workspace
+        </button>
+      </div>
+
+      <div class="dash-grid">
+        <% if (workspaces && workspaces.length) { %>
+          <% workspaces.forEach(function(ws) { %>
+            <div class="card">
+              <div class="flex items-center justify-between mb-16">
+                <div class="action-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
+                <% if (ws.isDefault) { %><span class="badge badge-purple">Default</span><% } %>
+              </div>
+              <div class="action-card-title mb-8"><%= ws.name %></div>
+              <p class="action-card-desc mb-16"><%= ws.description || 'No description.' %></p>
+              <div class="flex gap-12 text-xs text-gray">
+                <span><%= ws.stats.researches %> research</span>
+                <span>·</span>
+                <span><%= ws.stats.builds %> builds</span>
+                <span>·</span>
+                <span><%= ws.stats.boardroomSessions %> pitches</span>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state"><p class="empty-state-text">No workspaces yet. Create your first one.</p></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Workspace Modal -->
+<div class="modal-overlay" id="workspaceModalOverlay">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <div class="modal-title">Create Workspace</div>
+    <div class="modal-sub">Give your new workspace a name and description.</div>
+    <form id="createWorkspaceForm" style="display:flex;flex-direction:column;gap:16px">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" class="input" name="name" placeholder="e.g. Fintech Startup" required maxlength="60" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="textarea" name="description" placeholder="What is this workspace for?" maxlength="200"></textarea>
+      </div>
+      <button type="submit" class="btn btn-purple w-full" style="justify-content:center">Create Workspace</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const newWorkspaceBtn = document.getElementById('newWorkspaceBtn');
+  const workspaceModalOverlay = document.getElementById('workspaceModalOverlay');
+  const modalClose = document.getElementById('modalClose');
+  const createWorkspaceForm = document.getElementById('createWorkspaceForm');
+
+  newWorkspaceBtn.addEventListener('click', () => workspaceModalOverlay.classList.add('open'));
+  modalClose.addEventListener('click', () => workspaceModalOverlay.classList.remove('open'));
+  workspaceModalOverlay.addEventListener('click', (e) => { if (e.target === workspaceModalOverlay) workspaceModalOverlay.classList.remove('open'); });
+
+  createWorkspaceForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(createWorkspaceForm);
+    try {
+      const res = await fetch('/workspace/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.get('name'), description: formData.get('description') }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Workspace created.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        showToast(data.message || 'Could not create workspace.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  });
+</script>
+</body>
+</html>

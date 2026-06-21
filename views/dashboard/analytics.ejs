@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">Analytics</h1>
+        <p class="page-sub">Your activity across the last 30 days.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-box-label">Research</div><div class="stat-box-value"><%= stats.research %></div></div>
+        <div class="stat-box"><div class="stat-box-label">Builds</div><div class="stat-box-value"><%= stats.builds %></div></div>
+        <div class="stat-box"><div class="stat-box-label">Board Room</div><div class="stat-box-value"><%= stats.boardrooms %></div></div>
+        <div class="stat-box"><div class="stat-box-label">Tutor</div><div class="stat-box-value"><%= stats.tutorSessions %></div></div>
+        <div class="stat-box"><div class="stat-box-label">Workspaces</div><div class="stat-box-value"><%= stats.workspaces %></div></div>
+      </div>
+
+      <div class="card mb-24">
+        <div class="section-label">Activity Over Time</div>
+        <% if (stats.research + stats.builds + stats.boardrooms + stats.tutorSessions > 0) { %>
+          <canvas id="activityChart" height="90"></canvas>
+        <% } else { %>
+          <div class="empty-state"><p class="empty-state-text">No activity yet. Start researching, building, or pitching to see your analytics here.</p></div>
+        <% } %>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Workspace Breakdown</div>
+        <% if (workspaces && workspaces.length) { %>
+          <% workspaces.forEach(function(ws) { %>
+            <div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--border)">
+              <span class="text-sm" style="color:var(--white);font-family:var(--font-ui);font-weight:500"><%= ws.name %></span>
+              <span class="text-xs text-gray"><%= (ws.stats.researches||0) + (ws.stats.builds||0) + (ws.stats.boardroomSessions||0) + (ws.stats.tutorSessions||0) %> actions</span>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state"><p class="empty-state-text">No workspaces yet.</p></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const activityData = <%- activityData %>;
+  const canvas = document.getElementById('activityChart');
+  if (canvas && activityData) {
+    function bucketByDay(dates) {
+      const buckets = {};
+      const now = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        buckets[d.toISOString().slice(0,10)] = 0;
+      }
+      (dates || []).forEach(dateStr => {
+        const key = new Date(dateStr).toISOString().slice(0,10);
+        if (buckets[key] !== undefined) buckets[key]++;
+      });
+      return buckets;
+    }
+    const researchBuckets = bucketByDay(activityData.research);
+    const labels = Object.keys(researchBuckets).map(k => new Date(k).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const buildsBuckets = bucketByDay(activityData.builds);
+    const boardroomBuckets = bucketByDay(activityData.boardrooms);
+    const tutorBuckets = bucketByDay(activityData.tutorSessions);
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Research', data: Object.values(researchBuckets), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', tension: 0.4, fill: true },
+          { label: 'Builds', data: Object.values(buildsBuckets), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', tension: 0.4, fill: true },
+          { label: 'Board Room', data: Object.values(boardroomBuckets), borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.08)', tension: 0.4, fill: true },
+          { label: 'Tutor', data: Object.values(tutorBuckets), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', tension: 0.4, fill: true },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#888888', font: { family: 'Geist' } } } },
+        scales: {
+          x: { ticks: { color: '#5a5a5a', maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#5a5a5a', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        },
+      },
+    });
+  }
+</script>
+</body>
+</html>

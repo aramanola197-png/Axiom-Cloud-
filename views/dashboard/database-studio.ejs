@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/database.css" />
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">Database Studio</h1>
+        <p class="page-sub">Design your data model visually, or describe your project and let AI build the schema.</p>
+      </div>
+
+      <div class="db-toolbar">
+        <div class="db-select-wrap">
+          <select class="select" id="dbSelect" style="width:220px">
+            <% databases.forEach(function(db, i) { %>
+              <option value="<%= db._id %>" <%= i === 0 ? 'selected' : '' %>><%= db.name %></option>
+            <% }); %>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="newDbBtn">+ New Database</button>
+        </div>
+        <% if (databases.length) { %>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="addTableBtn">+ Add Table</button>
+          <button class="btn btn-purple btn-sm" id="regenerateBtn">Regenerate with AI</button>
+        </div>
+        <% } %>
+      </div>
+
+      <% if (!databases.length) { %>
+        <div class="db-canvas">
+          <div class="db-empty">
+            <div class="db-empty-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>
+            <h2 style="font-size:20px;font-weight:800;margin-bottom:8px">No databases yet</h2>
+            <p style="font-family:var(--font-body);color:var(--gray);font-size:14px;max-width:380px">Create a database, then describe your project to generate a complete schema automatically.</p>
+            <button class="btn btn-purple mt-24" id="createFirstDbBtn">Create Database</button>
+          </div>
+        </div>
+      <% } else { %>
+        <% databases.forEach(function(db, i) { %>
+          <div class="db-canvas" id="canvas-<%= db._id %>" style="<%= i === 0 ? '' : 'display:none' %>">
+            <div class="db-canvas-inner" id="inner-<%= db._id %>">
+              <svg class="db-connections" id="connections-<%= db._id %>"></svg>
+              <% if (!db.tables.length) { %>
+                <div class="db-empty" style="position:relative">
+                  <div class="db-empty-icon"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></div>
+                  <h2 style="font-size:18px;font-weight:800;margin-bottom:8px">Describe your project</h2>
+                  <p style="font-family:var(--font-body);color:var(--gray);font-size:13.5px;max-width:380px">Tell AI what you're building and it will generate a complete table structure with relationships.</p>
+                  <form class="db-generate-form generate-schema-form" data-db-id="<%= db._id %>">
+                    <div class="db-generate-input-wrap">
+                      <input type="text" class="db-generate-input" placeholder="A food delivery app with riders, orders, restaurants..." required />
+                      <button type="submit" class="chat-start-submit">
+                        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              <% } else { %>
+                <% db.tables.forEach(function(table) { %>
+                  <div class="db-table-card" data-table-id="<%= table._id %>" data-db-id="<%= db._id %>" style="left:<%= table.position.x %>px;top:<%= table.position.y %>px">
+                    <div class="db-table-header">
+                      <span class="db-table-name"><%= table.name %></span>
+                      <div class="db-table-actions">
+                        <button class="db-table-action-btn delete-table-btn" title="Delete table"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="db-fields-list">
+                      <% table.fields.forEach(function(f) { %>
+                        <div class="db-field-row">
+                          <span class="db-field-name"><% if (f.type === 'ObjectId') { %><span class="key-icon">🔑</span><% } %><%= f.name %></span>
+                          <span class="db-field-badges">
+                            <% if (f.required) { %><span class="db-badge-req">req</span><% } %>
+                            <% if (f.unique) { %><span class="db-badge-uniq">uniq</span><% } %>
+                            <span class="db-field-type"><%= f.type %><%= f.refTable ? ` → ${f.refTable}` : '' %></span>
+                          </span>
+                        </div>
+                      <% }); %>
+                    </div>
+                  </div>
+                <% }); %>
+              <% } %>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- New Database Modal -->
+<div class="modal-overlay" id="newDbModalOverlay">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" id="newDbModalClose">&times;</button>
+    <div class="modal-title">New Database</div>
+    <div class="modal-sub">Give it a name to get started.</div>
+    <form id="newDbForm" style="display:flex;flex-direction:column;gap:16px">
+      <input type="text" class="input" name="name" placeholder="e.g. Production Schema" required />
+      <button type="submit" class="btn btn-purple w-full" style="justify-content:center">Create</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const dbSelect = document.getElementById('dbSelect');
+  dbSelect?.addEventListener('change', () => {
+    document.querySelectorAll('[id^="canvas-"]').forEach(c => c.style.display = 'none');
+    const target = document.getElementById(`canvas-${dbSelect.value}`);
+    if (target) target.style.display = 'block';
+  });
+
+  const newDbBtn = document.getElementById('newDbBtn');
+  const createFirstDbBtn = document.getElementById('createFirstDbBtn');
+  const newDbModalOverlay = document.getElementById('newDbModalOverlay');
+  const newDbModalClose = document.getElementById('newDbModalClose');
+  const newDbForm = document.getElementById('newDbForm');
+
+  function openNewDbModal() { newDbModalOverlay.classList.add('open'); }
+  newDbBtn?.addEventListener('click', openNewDbModal);
+  createFirstDbBtn?.addEventListener('click', openNewDbModal);
+  newDbModalClose.addEventListener('click', () => newDbModalOverlay.classList.remove('open'));
+
+  newDbForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(newDbForm);
+    try {
+      const res = await fetch('/database/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.get('name'), workspaceId: window.currentWorkspaceId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Database created.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        showToast(data.message || 'Could not create database.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  });
+
+  document.querySelectorAll('.generate-schema-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const dbId = form.dataset.dbId;
+      const description = form.querySelector('.db-generate-input').value.trim();
+      if (!description) return;
+      const submitBtn = form.querySelector('.chat-start-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch(`/database/generate/${dbId}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Schema generated.', 'success');
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          showToast(data.message || 'Could not generate schema.', 'error');
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+        submitBtn.disabled = false;
+      }
+    });
+  });
+
+  const regenerateBtn = document.getElementById('regenerateBtn');
+  regenerateBtn?.addEventListener('click', async () => {
+    const dbId = dbSelect.value;
+    const description = prompt('Describe your project to regenerate the schema:');
+    if (!description?.trim()) return;
+    showToast('Generating schema...', 'success');
+    try {
+      const res = await fetch(`/database/generate/${dbId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Schema regenerated.', 'success');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showToast(data.message || 'Could not generate schema.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  });
+
+  const addTableBtn = document.getElementById('addTableBtn');
+  addTableBtn?.addEventListener('click', async () => {
+    const dbId = dbSelect.value;
+    const name = prompt('Table name:', 'NewTable');
+    if (!name?.trim()) return;
+    try {
+      const res = await fetch(`/database/${dbId}/table`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, position: { x: 40, y: 40 } }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Table added.', 'success');
+        setTimeout(() => window.location.reload(), 400);
+      } else {
+        showToast(data.message || 'Could not add table.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  });
+
+  document.querySelectorAll('.delete-table-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const card = btn.closest('.db-table-card');
+      const dbId = card.dataset.dbId;
+      const tableId = card.dataset.tableId;
+      if (!confirm('Delete this table?')) return;
+      try {
+        const res = await fetch(`/database/${dbId}/table/${tableId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          card.remove();
+        } else {
+          showToast(data.message || 'Could not delete table.', 'error');
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+      }
+    });
+  });
+
+  // Simple drag-to-reposition for table cards
+  document.querySelectorAll('.db-table-card').forEach(card => {
+    let isDragging = false, startX, startY, origX, origY;
+    card.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.db-table-action-btn')) return;
+      isDragging = true;
+      startX = e.clientX; startY = e.clientY;
+      origX = parseInt(card.style.left); origY = parseInt(card.style.top);
+      card.style.zIndex = 10;
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      card.style.left = `${origX + dx}px`;
+      card.style.top = `${origY + dy}px`;
+    });
+    document.addEventListener('mouseup', async () => {
+      if (!isDragging) return;
+      isDragging = false;
+      card.style.zIndex = 1;
+      const dbId = card.dataset.dbId;
+      const tableId = card.dataset.tableId;
+      const position = { x: parseInt(card.style.left), y: parseInt(card.style.top) };
+      try {
+        await fetch(`/database/${dbId}/table/${tableId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ position }),
+        });
+      } catch (err) { /* silent fail on position save */ }
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="chat-layout">
+      <div class="chat-history-sidebar">
+        <button class="chat-new-btn" onclick="window.location.href='/boardroom'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Pitch
+        </button>
+        <div class="chat-history-title">History</div>
+        <% if (sessions && sessions.length) { %>
+          <% sessions.forEach(function(s) { %>
+            <a href="/boardroom/session/<%= s._id %>" class="chat-history-item <%= currentSession && currentSession._id.toString() === s._id.toString() ? 'active' : '' %>"><%= s.title %></a>
+          <% }); %>
+        <% } else { %>
+          <p style="font-size:12px;color:var(--gray2);padding:8px 10px;font-family:var(--font-body)">No pitches yet.</p>
+        <% } %>
+      </div>
+
+      <div class="chat-main">
+        <% if (!currentSession) { %>
+          <div class="chat-empty">
+            <div class="chat-empty-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <h2 class="chat-empty-title">AI Board Room</h2>
+            <p class="chat-empty-desc">Pitch your idea to an Investor, a CTO, and a Product Manager. Real pressure. Honest feedback. A final verdict.</p>
+            <form class="chat-start-form" id="startForm">
+              <div class="chat-start-input-wrap">
+                <input type="text" class="chat-start-input" id="startInput" placeholder="Pitch your idea..." required />
+                <button type="submit" class="chat-start-submit" id="startSubmit">
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </form>
+            <div class="chat-suggestions">
+              <span class="chat-suggestion-chip">Uber for farmers</span>
+              <span class="chat-suggestion-chip">AI therapist app</span>
+              <span class="chat-suggestion-chip">Decentralized freelance marketplace</span>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="chat-messages" id="chatMessages">
+            <% currentSession.messages.forEach(function(m) { %>
+              <% if (m.speaker === 'user') { %>
+                <div class="msg user">
+                  <div class="msg-avatar"><%= user.username.slice(0,2).toUpperCase() %></div>
+                  <div class="msg-body">
+                    <div class="msg-name"><%= user.username %></div>
+                    <div class="msg-content"><%= m.content %></div>
+                  </div>
+                </div>
+              <% } else { %>
+                <div class="msg assistant board-speaker-<%= m.speaker %>">
+                  <div class="msg-avatar">
+                    <% if (m.speaker === 'investor') { %>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <% } else if (m.speaker === 'cto') { %>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <% } else { %>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <% } %>
+                  </div>
+                  <div class="msg-body">
+                    <div class="msg-name"><%= m.speaker === 'investor' ? 'Marcus Reid · Investor' : (m.speaker === 'cto' ? 'Dr. Priya Nair · CTO' : 'James Okafor · PM') %></div>
+                    <div class="msg-content prose"><span class="raw-content" data-content="<%= encodeURIComponent(m.content) %>"></span></div>
+                  </div>
+                </div>
+              <% } %>
+            <% }); %>
+
+            <% if (currentSession.isComplete && currentSession.verdict) { %>
+              <div class="verdict-card">
+                <div class="section-label">Final Verdict</div>
+                <div class="verdict-score"><%= currentSession.verdict.score %><span>/10</span></div>
+                <div class="verdict-section">
+                  <div class="verdict-section-title text-green">Strengths</div>
+                  <ul class="verdict-list"><% currentSession.verdict.strengths.forEach(function(s) { %><li><%= s %></li><% }); %></ul>
+                </div>
+                <div class="verdict-section">
+                  <div class="verdict-section-title text-red">Weaknesses</div>
+                  <ul class="verdict-list"><% currentSession.verdict.weaknesses.forEach(function(w) { %><li><%= w %></li><% }); %></ul>
+                </div>
+                <div class="verdict-section">
+                  <div class="verdict-section-title text-purple">Recommendations</div>
+                  <ul class="verdict-list"><% currentSession.verdict.recommendations.forEach(function(r) { %><li><%= r %></li><% }); %></ul>
+                </div>
+              </div>
+            <% } %>
+          </div>
+          <div class="chat-input-area">
+            <% if (!currentSession.isComplete) { %>
+              <div style="max-width:760px;margin:0 auto 12px;text-align:center">
+                <button class="zip-btn" id="getVerdictBtn" style="background:var(--purple);color:#fff">
+                  <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Get Final Verdict
+                </button>
+              </div>
+              <div class="chat-input-wrap">
+                <textarea class="chat-input" id="chatInput" placeholder="Respond to the board..." rows="1"></textarea>
+                <button class="chat-send-btn" id="chatSend">
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const sessionId = <%- currentSession ? `"${currentSession._id}"` : 'null' %>;
+  document.querySelectorAll('.raw-content').forEach(el => {
+    el.parentElement.innerHTML = DOMPurify.sanitize(marked.parse(decodeURIComponent(el.dataset.content)));
+  });
+
+  const startForm = document.getElementById('startForm');
+  if (startForm) {
+    document.querySelectorAll('.chat-suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => { document.getElementById('startInput').value = chip.textContent; });
+    });
+    startForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pitch = document.getElementById('startInput').value.trim();
+      if (!pitch) return;
+      const submitBtn = document.getElementById('startSubmit');
+      submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch('/boardroom/pitch', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pitch, workspaceId: window.currentWorkspaceId }),
+        });
+        const data = await res.json();
+        if (data.success) window.location.href = `/boardroom/session/${data.sessionId}`;
+        else { showToast(data.message || 'Something went wrong.', 'error'); submitBtn.disabled = false; }
+      } catch (err) { showToast('Network error.', 'error'); submitBtn.disabled = false; }
+    });
+  }
+
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const chatMessages = document.getElementById('chatMessages');
+  const getVerdictBtn = document.getElementById('getVerdictBtn');
+
+  if (chatInput) {
+    chatInput.addEventListener('input', () => { chatInput.style.height = 'auto'; chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px'; });
+    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    chatSend.addEventListener('click', sendMessage);
+  }
+
+  const speakerNames = { investor: 'Marcus Reid · Investor', cto: 'Dr. Priya Nair · CTO', pm: 'James Okafor · PM' };
+  const speakerIcons = {
+    investor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    cto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+    pm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+  };
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function addUserMessage(content) {
+    const div = document.createElement('div'); div.className = 'msg user';
+    div.innerHTML = `<div class="msg-avatar"><%= user.username.slice(0,2).toUpperCase() %></div><div class="msg-body"><div class="msg-name"><%= user.username %></div><div class="msg-content">${escapeHtml(content)}</div></div>`;
+    chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  function addBoardMessage(speaker, content) {
+    const div = document.createElement('div'); div.className = `msg assistant board-speaker-${speaker}`;
+    div.innerHTML = `<div class="msg-avatar">${speakerIcons[speaker]}</div><div class="msg-body"><div class="msg-name">${speakerNames[speaker]}</div><div class="msg-content prose">${DOMPurify.sanitize(marked.parse(content))}</div></div>`;
+    chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  function addTyping() {
+    const div = document.createElement('div'); div.className = 'msg assistant'; div.id = 'typingIndicator';
+    div.innerHTML = `<div class="msg-avatar">···</div><div class="msg-body"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || !sessionId) return;
+    chatInput.value = ''; chatInput.style.height = 'auto';
+    addUserMessage(message);
+    addTyping(); chatSend.disabled = true;
+    try {
+      const res = await fetch(`/boardroom/respond/${sessionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
+      const data = await res.json();
+      document.getElementById('typingIndicator')?.remove();
+      if (data.success) {
+        data.messages.forEach((m, i) => {
+          setTimeout(() => addBoardMessage(m.speaker, m.content), i * 500);
+        });
+      } else showToast(data.message || 'Something went wrong.', 'error');
+    } catch (err) { document.getElementById('typingIndicator')?.remove(); showToast('Network error.', 'error'); }
+    chatSend.disabled = false;
+  }
+
+  if (getVerdictBtn) {
+    getVerdictBtn.addEventListener('click', async () => {
+      getVerdictBtn.disabled = true;
+      getVerdictBtn.innerHTML = '<div class="spinner"></div> Deliberating...';
+      try {
+        const res = await fetch(`/boardroom/verdict/${sessionId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('The board has reached a verdict.', 'success');
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          showToast(data.message || 'Could not generate verdict.', 'error');
+          getVerdictBtn.disabled = false;
+          getVerdictBtn.innerHTML = 'Get Final Verdict';
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+        getVerdictBtn.disabled = false;
+      }
+    });
+  }
+
+  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+</script>
+</body>
+</html>

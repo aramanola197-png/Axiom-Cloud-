@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+
+    <div class="page-content">
+      <% if (welcome) { %>
+        <div class="welcome-banner" id="welcomeBanner">
+          <div class="welcome-banner-text">
+            Welcome to Axiom Cloud, <strong><%= user.username %></strong>. Your workspace is ready — start by researching an idea or jumping straight into the Builder.
+          </div>
+          <button class="welcome-banner-close" id="welcomeBannerClose">&times;</button>
+        </div>
+      <% } %>
+
+      <div class="page-header">
+        <h1 class="page-title">Welcome back, <%= user.username %></h1>
+        <p class="page-sub">Here's what's happening across your workspaces.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-box-label">Workspaces</div>
+          <div class="stat-box-value"><%= stats.workspaces %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">Research Sessions</div>
+          <div class="stat-box-value"><%= stats.researches %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">Builds</div>
+          <div class="stat-box-value"><%= stats.builds %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">Board Room Sessions</div>
+          <div class="stat-box-value"><%= stats.boardrooms %></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-label">Tutor Sessions</div>
+          <div class="stat-box-value"><%= stats.tutorSessions %></div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <a href="/research" class="action-card">
+          <div class="action-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+          <div class="action-card-title">Start Researching</div>
+          <div class="action-card-desc">Ask anything. Get market data, trends, and competitive analysis.</div>
+        </a>
+        <a href="/builder" class="action-card">
+          <div class="action-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></div>
+          <div class="action-card-title">Open AI Builder</div>
+          <div class="action-card-desc">Describe what you want to build. Get a real architecture and codebase.</div>
+        </a>
+        <a href="/boardroom" class="action-card">
+          <div class="action-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          <div class="action-card-title">Enter the Board Room</div>
+          <div class="action-card-desc">Pitch your idea to an Investor, CTO, and Product Manager.</div>
+        </a>
+      </div>
+
+      <div class="dash-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="activity-section">
+          <div class="activity-header">
+            <span class="activity-title">Recent Research</span>
+            <a href="/research" style="font-size:12px;color:var(--purple);text-decoration:none">View all</a>
+          </div>
+          <% if (recentResearch && recentResearch.length) { %>
+            <% recentResearch.forEach(function(r) { %>
+              <a href="/research/session/<%= r._id %>" class="activity-item">
+                <div class="activity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+                <div class="activity-text">
+                  <div class="activity-text-title"><%= r.title %></div>
+                  <div class="activity-text-time"><%= new Date(r.updatedAt).toLocaleDateString() %></div>
+                </div>
+              </a>
+            <% }); %>
+          <% } else { %>
+            <div class="empty-state"><p class="empty-state-text">No research sessions yet. <a href="/research" style="color:var(--purple);text-decoration:none">Start one →</a></p></div>
+          <% } %>
+        </div>
+
+        <div class="activity-section">
+          <div class="activity-header">
+            <span class="activity-title">Recent Builds</span>
+            <a href="/builder" style="font-size:12px;color:var(--purple);text-decoration:none">View all</a>
+          </div>
+          <% if (recentBuilds && recentBuilds.length) { %>
+            <% recentBuilds.forEach(function(b) { %>
+              <a href="/builder/session/<%= b._id %>" class="activity-item">
+                <div class="activity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></div>
+                <div class="activity-text">
+                  <div class="activity-text-title"><%= b.title %></div>
+                  <div class="activity-text-time"><%= new Date(b.updatedAt).toLocaleDateString() %></div>
+                </div>
+              </a>
+            <% }); %>
+          <% } else { %>
+            <div class="empty-state"><p class="empty-state-text">No builds yet. <a href="/builder" style="color:var(--purple);text-decoration:none">Start building →</a></p></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

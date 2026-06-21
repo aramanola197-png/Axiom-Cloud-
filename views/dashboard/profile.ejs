@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content" style="max-width:640px">
+      <div class="page-header">
+        <h1 class="page-title">Profile & Settings</h1>
+        <p class="page-sub">Manage your account information and preferences.</p>
+      </div>
+
+      <% if (success) { %>
+        <div class="auth-error" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.25);color:#4ade80;margin-bottom:24px"><%= success %></div>
+      <% } %>
+      <% if (error) { %>
+        <div class="auth-error" style="margin-bottom:24px"><%= error %></div>
+      <% } %>
+
+      <div class="card mb-24">
+        <div class="section-label">Avatar</div>
+        <div class="flex items-center gap-16">
+          <div id="avatarPreviewWrap">
+            <% if (user.avatar) { %>
+              <img src="<%= user.avatar %>" class="user-avatar" style="width:64px;height:64px" id="avatarPreview" />
+            <% } else { %>
+              <div class="user-avatar-fallback" style="width:64px;height:64px;font-size:18px" id="avatarPreview"><%= user.username.slice(0,2).toUpperCase() %></div>
+            <% } %>
+          </div>
+          <div>
+            <label for="avatarInput" class="btn btn-ghost btn-sm" style="cursor:pointer">Upload New Photo</label>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none" />
+            <p class="text-xs text-gray mt-8">JPG, PNG, GIF or WebP. Max 15MB.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-24">
+        <div class="section-label">Account Information</div>
+        <form action="/profile/save" method="POST" style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="input" name="username" value="<%= user.username %>" minlength="3" maxlength="30" pattern="[a-zA-Z0-9_]+" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="input" value="<%= user.email %>" disabled style="opacity:0.5;cursor:not-allowed" />
+            <span class="text-xs text-gray">Email cannot be changed.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bio</label>
+            <textarea class="textarea" name="bio" maxlength="300" placeholder="Tell us about yourself..."><%= user.bio %></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Timezone</label>
+            <select class="select" name="timezone">
+              <option value="UTC" <%= user.timezone === 'UTC' ? 'selected' : '' %>>UTC</option>
+              <option value="America/New_York" <%= user.timezone === 'America/New_York' ? 'selected' : '' %>>Eastern Time (US)</option>
+              <option value="America/Los_Angeles" <%= user.timezone === 'America/Los_Angeles' ? 'selected' : '' %>>Pacific Time (US)</option>
+              <option value="Europe/London" <%= user.timezone === 'Europe/London' ? 'selected' : '' %>>London</option>
+              <option value="Africa/Lagos" <%= user.timezone === 'Africa/Lagos' ? 'selected' : '' %>>Lagos / WAT</option>
+              <option value="Asia/Dubai" <%= user.timezone === 'Asia/Dubai' ? 'selected' : '' %>>Dubai</option>
+              <option value="Asia/Kolkata" <%= user.timezone === 'Asia/Kolkata' ? 'selected' : '' %>>India</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-purple" style="align-self:flex-start">Save Changes</button>
+        </form>
+      </div>
+
+      <% if (user.authMethod === 'local') { %>
+      <div class="card mb-24">
+        <div class="section-label">Change Password</div>
+        <form id="passwordForm" style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group">
+            <label class="form-label">Current Password</label>
+            <input type="password" class="input" name="currentPassword" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Password</label>
+            <input type="password" class="input" name="newPassword" required minlength="8" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" class="input" name="confirmPassword" required minlength="8" />
+          </div>
+          <button type="submit" class="btn btn-ghost" style="align-self:flex-start">Update Password</button>
+        </form>
+      </div>
+      <% } %>
+
+      <div class="card">
+        <div class="section-label">Notifications</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <label class="flex items-center justify-between" style="cursor:pointer">
+            <span class="text-sm">Email notifications</span>
+            <input type="checkbox" <%= user.notifications.email ? 'checked' : '' %> />
+          </label>
+          <label class="flex items-center justify-between" style="cursor:pointer">
+            <span class="text-sm">Research updates</span>
+            <input type="checkbox" <%= user.notifications.research ? 'checked' : '' %> />
+          </label>
+          <label class="flex items-center justify-between" style="cursor:pointer">
+            <span class="text-sm">Builder updates</span>
+            <input type="checkbox" <%= user.notifications.builder ? 'checked' : '' %> />
+          </label>
+          <label class="flex items-center justify-between" style="cursor:pointer">
+            <span class="text-sm">Board Room updates</span>
+            <input type="checkbox" <%= user.notifications.boardroom ? 'checked' : '' %> />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const avatarInput = document.getElementById('avatarInput');
+  avatarInput.addEventListener('change', async () => {
+    if (!avatarInput.files[0]) return;
+    const formData = new FormData();
+    formData.append('avatar', avatarInput.files[0]);
+    try {
+      const res = await fetch('/profile/avatar', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Avatar updated.', 'success');
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        showToast(data.message || 'Upload failed.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error.', 'error');
+    }
+  });
+
+  const passwordForm = document.getElementById('passwordForm');
+  if (passwordForm) {
+    passwordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(passwordForm);
+      try {
+        const res = await fetch('/profile/change-password', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: formData.get('currentPassword'),
+            newPassword: formData.get('newPassword'),
+            confirmPassword: formData.get('confirmPassword'),
+          }),
+        });
+        const data = await res.json();
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) passwordForm.reset();
+      } catch (err) {
+        showToast('Network error.', 'error');
+      }
+    });
+  }
+</script>
+</body>
+</html>

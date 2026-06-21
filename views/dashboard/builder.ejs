@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="chat-layout">
+      <div class="chat-history-sidebar">
+        <button class="chat-new-btn" onclick="window.location.href='/builder'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Build
+        </button>
+        <div class="chat-history-title">History</div>
+        <% if (sessions && sessions.length) { %>
+          <% sessions.forEach(function(s) { %>
+            <a href="/builder/session/<%= s._id %>" class="chat-history-item <%= currentSession && currentSession._id.toString() === s._id.toString() ? 'active' : '' %>"><%= s.title %></a>
+          <% }); %>
+        <% } else { %>
+          <p style="font-size:12px;color:var(--gray2);padding:8px 10px;font-family:var(--font-body)">No builds yet.</p>
+        <% } %>
+      </div>
+
+      <div class="chat-main">
+        <% if (!currentSession) { %>
+          <div class="chat-empty">
+            <div class="chat-empty-icon"><svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></div>
+            <h2 class="chat-empty-title">AI Builder</h2>
+            <p class="chat-empty-desc">Describe what you want to build. Get a complete architecture, tech stack, and a downloadable codebase.</p>
+            <form class="chat-start-form" id="startForm">
+              <div class="chat-start-input-wrap">
+                <input type="text" class="chat-start-input" id="startInput" placeholder="Build a crypto exchange..." required />
+                <button type="submit" class="chat-start-submit" id="startSubmit">
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </form>
+            <div class="chat-suggestions">
+              <span class="chat-suggestion-chip">Build a SaaS analytics dashboard</span>
+              <span class="chat-suggestion-chip">Build a food delivery app</span>
+              <span class="chat-suggestion-chip">Build a Web3 DAO platform</span>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="chat-messages" id="chatMessages">
+            <% currentSession.messages.forEach(function(m) { %>
+              <div class="msg <%= m.role %>">
+                <div class="msg-avatar"><%= m.role === 'user' ? (user.username.slice(0,2).toUpperCase()) : 'AI' %></div>
+                <div class="msg-body">
+                  <div class="msg-name"><%= m.role === 'user' ? user.username : 'AI Builder' %></div>
+                  <div class="msg-content prose"><span class="raw-content" data-content="<%= encodeURIComponent(m.content) %>"></span></div>
+                </div>
+              </div>
+            <% }); %>
+            <% if (currentSession.hasZip) { %>
+              <div class="msg assistant">
+                <div class="msg-avatar">AI</div>
+                <div class="msg-body">
+                  <a href="<%= currentSession.zipPath %>" class="zip-btn" download>
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Project ZIP
+                  </a>
+                </div>
+              </div>
+            <% } %>
+          </div>
+          <div class="chat-input-area">
+            <% if (!currentSession.hasZip) { %>
+              <div style="max-width:760px;margin:0 auto 12px;text-align:center">
+                <button class="zip-btn" id="generateZipBtn" style="background:var(--purple);color:#fff">
+                  <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+                  Generate Project Files
+                </button>
+              </div>
+            <% } %>
+            <div class="chat-input-wrap">
+              <textarea class="chat-input" id="chatInput" placeholder="Refine the architecture, ask questions..." rows="1"></textarea>
+              <button class="chat-send-btn" id="chatSend">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  const sessionId = <%- currentSession ? `"${currentSession._id}"` : 'null' %>;
+  document.querySelectorAll('.raw-content').forEach(el => {
+    el.parentElement.innerHTML = DOMPurify.sanitize(marked.parse(decodeURIComponent(el.dataset.content)));
+  });
+
+  const startForm = document.getElementById('startForm');
+  if (startForm) {
+    document.querySelectorAll('.chat-suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => { document.getElementById('startInput').value = chip.textContent; });
+    });
+    startForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById('startInput').value.trim();
+      if (!prompt) return;
+      const submitBtn = document.getElementById('startSubmit');
+      submitBtn.disabled = true; submitBtn.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch('/builder/start', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, workspaceId: window.currentWorkspaceId }),
+        });
+        const data = await res.json();
+        if (data.success) window.location.href = `/builder/session/${data.sessionId}`;
+        else { showToast(data.message || 'Something went wrong.', 'error'); submitBtn.disabled = false; }
+      } catch (err) { showToast('Network error.', 'error'); submitBtn.disabled = false; }
+    });
+  }
+
+  const generateZipBtn = document.getElementById('generateZipBtn');
+  if (generateZipBtn) {
+    generateZipBtn.addEventListener('click', async () => {
+      generateZipBtn.disabled = true;
+      generateZipBtn.innerHTML = '<div class="spinner"></div> Generating files...';
+      try {
+        const res = await fetch(`/builder/generate-zip/${sessionId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Project files generated!', 'success');
+          setTimeout(() => window.location.reload(), 600);
+        } else {
+          showToast(data.message || 'Could not generate files.', 'error');
+          generateZipBtn.disabled = false;
+          generateZipBtn.innerHTML = 'Generate Project Files';
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+        generateZipBtn.disabled = false;
+      }
+    });
+  }
+
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  const chatMessages = document.getElementById('chatMessages');
+  if (chatInput) {
+    chatInput.addEventListener('input', () => { chatInput.style.height = 'auto'; chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px'; });
+    chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    chatSend.addEventListener('click', sendMessage);
+  }
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function addMessage(role, content, name) {
+    const div = document.createElement('div'); div.className = `msg ${role}`;
+    const initials = role === 'user' ? '<%= user.username.slice(0,2).toUpperCase() %>' : 'AI';
+    div.innerHTML = `<div class="msg-avatar">${initials}</div><div class="msg-body"><div class="msg-name">${name}</div><div class="msg-content prose">${role === 'assistant' ? DOMPurify.sanitize(marked.parse(content)) : escapeHtml(content)}</div></div>`;
+    chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  function addTyping() {
+    const div = document.createElement('div'); div.className = 'msg assistant'; div.id = 'typingIndicator';
+    div.innerHTML = `<div class="msg-avatar">AI</div><div class="msg-body"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    chatMessages.appendChild(div); chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || !sessionId) return;
+    chatInput.value = ''; chatInput.style.height = 'auto';
+    addMessage('user', message, '<%= user.username %>');
+    addTyping(); chatSend.disabled = true;
+    try {
+      const res = await fetch(`/builder/message/${sessionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
+      const data = await res.json();
+      document.getElementById('typingIndicator')?.remove();
+      if (data.success) addMessage('assistant', data.response, 'AI Builder');
+      else showToast(data.message || 'Something went wrong.', 'error');
+    } catch (err) { document.getElementById('typingIndicator')?.remove(); showToast('Network error.', 'error'); }
+    chatSend.disabled = false;
+  }
+  if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+</script>
+</body>
+</html>

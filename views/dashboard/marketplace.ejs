@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/images/favicon.png" type="image/png" onerror="this.remove()" />
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../partials/sidebar') %>
+  <div class="main-content">
+    <%- include('../partials/topbar') %>
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">Marketplace</h1>
+        <p class="page-sub">Specialized AI agents to extend what Axiom Cloud can do for you. Install one, then run it directly.</p>
+      </div>
+
+      <div class="dash-grid" style="grid-template-columns:repeat(3,1fr)">
+        <% agents.forEach(function(agent) { %>
+          <div class="card">
+            <div class="flex items-center justify-between mb-16">
+              <div class="action-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+              </div>
+              <span class="badge badge-gray"><%= agent.category %></span>
+            </div>
+            <div class="action-card-title mb-8"><%= agent.name %></div>
+            <p class="action-card-desc mb-16"><%= agent.description %></p>
+            <% if (agent.installed) { %>
+              <div style="display:flex;gap:8px">
+                <a href="/marketplace/run/<%= agent.id %>" class="btn btn-purple" style="flex:1;justify-content:center">Open Agent</a>
+                <button class="btn btn-ghost uninstall-btn" data-id="<%= agent.id %>" title="Uninstall">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            <% } else { %>
+              <button class="btn btn-ghost w-full install-btn" style="justify-content:center" data-id="<%= agent.id %>">Install Agent</button>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+<script>
+  document.querySelectorAll('.install-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const agentId = btn.dataset.id;
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div>';
+      try {
+        const res = await fetch(`/marketplace/install/${agentId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Agent installed.', 'success');
+          setTimeout(() => window.location.reload(), 400);
+        } else {
+          showToast(data.message || 'Could not install agent.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Install Agent';
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Install Agent';
+      }
+    });
+  });
+
+  document.querySelectorAll('.uninstall-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const agentId = btn.dataset.id;
+      if (!confirm('Uninstall this agent? Your past runs will still be saved.')) return;
+      try {
+        const res = await fetch(`/marketplace/uninstall/${agentId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Agent uninstalled.', 'success');
+          setTimeout(() => window.location.reload(), 400);
+        } else {
+          showToast(data.message || 'Could not uninstall agent.', 'error');
+        }
+      } catch (err) {
+        showToast('Network error.', 'error');
+      }
+    });
+  });
+</script>
+</body>
+</html>
