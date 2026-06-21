@@ -26,6 +26,7 @@ const marketplaceRoutes = require('./routes/marketplace');
 const databaseRoutes = require('./routes/database');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Connect to database
 connectDB();
