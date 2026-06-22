@@ -3,6 +3,9 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+// Add these two lines to import your email service and code generator helper:
+const { sendVerificationEmail } = require('../utils/email');
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const configurePassport = () => {
   passport.serializeUser((user, done) => {
@@ -18,36 +21,72 @@ const configurePassport = () => {
     }
   });
 
-  // Google OAuth
+
+   // ==========================================
+  // GOOGLE OAUTH STRATEGY
+  // ==========================================
   passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL,
-  }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      let user = await User.findOne({ googleId: profile.id });
-      if (user) {
-        return done(null, user);
-      }
-      // Check if email already exists
-      user = await User.findOne({ email: profile.emails[0].value });
-      if (user) {
-        user.googleId = profile.id;
-        if (!user.avatar && profile.photos[0]) {
-          user.avatar = profile.photos[0].value;
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      proxy: true // Allows secure cookies to work correctly on cloud platforms like Render
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // 1. Check if a user with this specific Google ID already exists
+        let user = await User.findOne({ googleId: profile.id });
+        if (user) {
+          return done(null, user);
         }
-        await user.save();
+
+        // 2. Check if the email address was already used for a local signup
+        user = await User.findOne({ email: profile.emails[0].value.toLowerCase() });
+        if (user) {
+          // Link the Google ID to their existing profile so they can use both login methods
+          user.googleId = profile.id;
+          if (!user.avatar && profile.photos && profile.photos[0]) {
+            user.avatar = profile.photos[0].value;
+          }
+          await user.save();
+          return done(null, user);
+        }
+
+        // 3. Create a brand-new unverified user document
+        const code = generateCode();
+        const expires = new Date(Date.now() + 15 * 60 * 1000);
+
+        user = await User.create({
+          googleId: profile.id,
+          username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 9999),
+          email: profile.emails[0].value.toLowerCase(),
+          avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+          isVerified: false, // Strict pin entry wall is now active
+          authMethod: 'google',
+          verificationCode: code,
+          verificationExpires: expires
+        });
+
+        // 4. Dispatch the verification pin token via your Brevo SMTP server
+        try {
+          await sendVerificationEmail(user.email, user.username, code);
+        } catch (emailError) {
+          console.error('Google onboarding email dispatch failed. Executing rollback:', emailError);
+          // Delete the orphaned document instantly so the database stays clean
+          await User.findByIdAndDelete(user._id); 
+          return done(emailError, null);
+        }
+
+        // Complete the authentication process successfully
         return done(null, user);
+      } catch (err) {
+        console.error('Google Strategy Error:', err);
+        return done(err, null);
       }
-      // Create new user
-      user = await User.create({
-        googleId: profile.id,
-        username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 9999),
-        email: profile.emails[0].value,
-        avatar: profile.photos[0] ? profile.photos[0].value : null,
-        isVerified: true,
-        authMethod: 'google',
-      });
+    }
+  ));
+
+  // (Your LocalStrategy configuration follows below...)
+
       // Create default workspace
       const Workspace = require('../models/Workspace');
       await Workspace.create({

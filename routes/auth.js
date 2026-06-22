@@ -35,15 +35,30 @@ router.post('/verify', authLimiter, authController.verify);
 router.post('/resend-code', authLimiter, authController.resendCode);
 
 // Google OAuth
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/auth/signin' }),
-  (req, res) => {
-    const returnTo = req.session.returnTo || '/dashboard';
-    delete req.session.returnTo;
-    res.redirect(returnTo);
+  (req, res, next) => {
+    // Check if this Google user account requires email validation
+    if (!req.user.isVerified) {
+      // 1. Stage the target email for the /auth/verify verification template
+      req.session.pendingEmail = req.user.email;
+
+      // 2. Terminate the active session to protect the /dashboard route layout
+      req.logout((err) => {
+        if (err) return next(err);
+        
+        // 3. Route them directly to the 6-digit token entry form
+        return res.redirect('/auth/verify');
+      });
+    } else {
+      // Existing verified user: pass them straight through to their workspace
+      const returnTo = req.session.returnTo || '/dashboard';
+      delete req.session.returnTo;
+      res.redirect(returnTo);
+    }
   }
 );
+
 
 // Logout
 router.post('/logout', requireAuth, (req, res, next) => {
