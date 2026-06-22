@@ -1,29 +1,34 @@
-const nodemailer = require('nodemailer');
+// Replaced nodemailer with Brevo HTTPS REST API to bypass Render's outbound SMTP port blocking
+const transporter = {
+  sendMail: async ({ from, to, subject, html }) => {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'api-key': process.env.BREVO_API_KEY
+        },
+        body: JSON.stringify({
+          sender: { email: from || process.env.EMAIL_FROM || 'noreply@axiomcloud.dev' },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html
+        })
+      });
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-
-  port: Number(process.env.SMTP_PORT) || 587,
-
-  secure: false,
-
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("SMTP Verify Error:", error);
-  } else {
-    console.log("SMTP Server is ready.");
+      if (!response.ok) {
+        const errorDetails = await response.json().catch(() => ({}));
+        console.error('Brevo API Error Payload:', errorDetails);
+        throw new Error(`Brevo API failed with status ${response.status}`);
+      }
+      return true;
+    } catch (err) {
+      console.error('Email Dispatch Exception:', err);
+      throw err;
+    }
   }
-});
+};
 
 const baseStyles = `
   body { margin:0; padding:0; background:#0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
