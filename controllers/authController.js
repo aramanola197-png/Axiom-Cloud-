@@ -1,11 +1,10 @@
 const passport = require('passport');
 const User = require('../models/User');
 const Workspace = require('../models/Workspace');
-const { sendVerificationEmail, sendWelcomeEmail } = require('../utils/email');
-const crypto = require('crypto');
 
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-
+// ==========================================
+// SIGN IN CONTROLLER
+// ==========================================
 exports.signin = (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
@@ -26,10 +25,14 @@ exports.signin = (req, res, next) => {
   })(req, res, next);
 };
 
+// ==========================================
+// SIGN UP CONTROLLER (Auto-Verified)
+// ==========================================
 exports.signup = async (req, res) => {
   try {
     const { username, email, password, confirmPassword } = req.body;
 
+    // 1. Strict Input Validations
     if (!username || !email || !password || !confirmPassword) {
       return res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'All fields are required.' });
     }
@@ -46,6 +49,7 @@ exports.signup = async (req, res) => {
       return res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'Passwords do not match.' });
     }
 
+    // 2. Uniqueness Checks
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'An account with this email already exists.' });
@@ -55,56 +59,16 @@ exports.signup = async (req, res) => {
       return res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'This username is already taken.' });
     }
 
-    const code = generateCode();
-    const expires = new Date(Date.now() + 15 * 60 * 1000);
-
+    // 3. Document Creation (Set to verified instantly)
     const user = await User.create({
       username,
       email: email.toLowerCase(),
       password,
-      verificationCode: code,
-      verificationExpires: expires,
       authMethod: 'local',
-      isVerified: false,
+      isVerified: true, // 👈 Bypasses verification gate
     });
 
-    await sendVerificationEmail(user.email, user.username, code);
-
-    req.session.pendingEmail = user.email;
-    res.redirect('/auth/verify');
-  } catch (err) {
-    console.error('Signup error:', err);
-    res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'Something went wrong. Please try again.' });
-  }
-};
-
-exports.verify = async (req, res) => {
-  try {
-    const email = req.session.pendingEmail;
-    if (!email) return res.redirect('/auth/signup');
-
-    const code = (req.body.code || '').trim();
-    if (!code || code.length !== 6) {
-      return res.render('auth/verify', { title: 'Verify Your Email — Axiom Cloud', email, error: 'Please enter the complete 6-digit code.' });
-    }
-
-    const user = await User.findOne({ email }).select('+verificationCode +verificationExpires');
-    if (!user) return res.redirect('/auth/signup');
-
-    if (user.verificationExpires < new Date()) {
-      return res.render('auth/verify', { title: 'Verify Your Email — Axiom Cloud', email, error: 'Your verification code has expired. Please request a new one.' });
-    }
-
-    if (user.verificationCode !== code) {
-      return res.render('auth/verify', { title: 'Verify Your Email — Axiom Cloud', email, error: 'incorrect_code' });
-    }
-
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationExpires = undefined;
-    await user.save();
-
-    // Create default workspace
+    // 4. Provision Default Workspace (Moved directly into signup phase)
     await Workspace.create({
       user: user._id,
       name: 'My First Workspace',
@@ -113,37 +77,20 @@ exports.verify = async (req, res) => {
       isDefault: true,
     });
 
-    await sendWelcomeEmail(user.email, user.username);
+    console.log(`New local user registered and auto-verified: ${user.email}`);
 
-    delete req.session.pendingEmail;
+    // 5. Establish Passport login session automatically
     req.logIn(user, (err) => {
-      if (err) return res.redirect('/auth/signin');
+      if (err) {
+        console.error('Auto-login redirection exception:', err);
+        return res.redirect('/auth/signin');
+      }
+      // Drop them cleanly straight into their workspace setup!
       res.redirect('/dashboard?welcome=1');
     });
+
   } catch (err) {
-    console.error('Verify error:', err);
-    const email = req.session.pendingEmail;
-    res.render('auth/verify', { title: 'Verify Your Email — Axiom Cloud', email, error: 'Something went wrong. Please try again.' });
-  }
-};
-
-exports.resendCode = async (req, res) => {
-  try {
-    const email = req.session.pendingEmail;
-    if (!email) return res.json({ success: false, message: 'Session expired. Please sign up again.' });
-
-    const user = await User.findOne({ email }).select('+verificationCode +verificationExpires');
-    if (!user) return res.json({ success: false, message: 'Account not found.' });
-    if (user.isVerified) return res.json({ success: false, message: 'This account is already verified.' });
-
-    const code = generateCode();
-    user.verificationCode = code;
-    user.verificationExpires = new Date(Date.now() + 15 * 60 * 1000);
-    await user.save();
-
-    await sendVerificationEmail(user.email, user.username, code);
-    res.json({ success: true, message: 'A new verification code has been sent to your email.' });
-  } catch (err) {
-    res.json({ success: false, message: 'Failed to resend code. Please try again.' });
+    console.error('Signup error:', err);
+    res.render('auth/signup', { title: 'Get Started — Axiom Cloud', error: 'Something went wrong. Please try again.' });
   }
 };

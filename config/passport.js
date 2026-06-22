@@ -3,10 +3,6 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const Workspace = require('../models/Workspace');
-const { sendVerificationEmail } = require('../utils/email');
-
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const configurePassport = () => {
   passport.serializeUser((user, done) => {
@@ -23,60 +19,50 @@ const configurePassport = () => {
   });
 
   // ==========================================
-  // GOOGLE OAUTH STRATEGY
+  // GOOGLE OAUTH STRATEGY (Auto-Verified)
   // ==========================================
   passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      proxy: true 
+      proxy: true // Ensures secure cookie passing over Render hosting environment
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // 1. Check if a user with this specific Google ID already exists
+        // 1. Check if user profile with this specific Google ID already exists
         let user = await User.findOne({ googleId: profile.id });
         if (user) {
           return done(null, user);
         }
 
-        // 2. Check if the email address was already used for a local signup
-        user = await User.findOne({ email: profile.emails[0].value.toLowerCase() });
+        // 2. Check if email was already used for a local registration
+        const targetEmail = profile.emails[0].value.toLowerCase();
+        user = await User.findOne({ email: targetEmail });
         if (user) {
+          // Link Google credentials directly to existing account
           user.googleId = profile.id;
           if (!user.avatar && profile.photos && profile.photos[0]) {
             user.avatar = profile.photos[0].value;
           }
+          user.isVerified = true; // Auto-verify linked account
           await user.save();
           return done(null, user);
         }
 
-        // 3. Create a brand-new unverified user document
-        const code = generateCode();
-        const expires = new Date(Date.now() + 15 * 60 * 1000);
-
+        // 3. Create a brand-new user profile with instant access clearance
         user = await User.create({
           googleId: profile.id,
           username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 9999),
-          email: profile.emails[0].value.toLowerCase(),
+          email: targetEmail,
           avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
-          isVerified: false, 
-          authMethod: 'google',
-          verificationCode: code,
-          verificationExpires: expires
+          isVerified: true, // 👈 Handshake auto-approves account confirmation
+          authMethod: 'google'
         });
 
-        // 4. Dispatch the verification pin token via your Brevo SMTP server
-        try {
-          await sendVerificationEmail(user.email, user.username, code);
-        } catch (emailError) {
-          console.error('Google onboarding email dispatch failed. Executing rollback:', emailError);
-          await User.findByIdAndDelete(user._id); 
-          return done(emailError, null);
-        }
-
+        console.log(`New Google user registered and auto-verified: ${user.email}`);
         return done(null, user);
       } catch (err) {
-        console.error('Google Strategy Error:', err);
+        console.error('Google Strategy Internal Exception:', err);
         return done(err, null);
       }
     }
@@ -94,9 +80,9 @@ const configurePassport = () => {
       if (user.authMethod === 'google') {
         return done(null, false, { message: 'This account uses Google sign-in. Please continue with Google.' });
       }
-      if (!user.isVerified) {
-        return done(null, false, { message: 'Please verify your email address before signing in.' });
-      }
+
+      // 💡 NOTE: The strict verification check has been removed here to open local accounts instantly
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return done(null, false, { message: 'Incorrect password. Please try again.' });
