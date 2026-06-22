@@ -4,8 +4,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Workspace = require('../models/Workspace');
-// Add these two lines to import your email service and code generator helper:
 const { sendVerificationEmail } = require('../utils/email');
+
 const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const configurePassport = () => {
@@ -22,15 +22,14 @@ const configurePassport = () => {
     }
   });
 
-
-   // ==========================================
+  // ==========================================
   // GOOGLE OAUTH STRATEGY
   // ==========================================
   passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      proxy: true // Allows secure cookies to work correctly on cloud platforms like Render
+      proxy: true 
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -43,7 +42,6 @@ const configurePassport = () => {
         // 2. Check if the email address was already used for a local signup
         user = await User.findOne({ email: profile.emails[0].value.toLowerCase() });
         if (user) {
-          // Link the Google ID to their existing profile so they can use both login methods
           user.googleId = profile.id;
           if (!user.avatar && profile.photos && profile.photos[0]) {
             user.avatar = profile.photos[0].value;
@@ -61,7 +59,7 @@ const configurePassport = () => {
           username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 9999),
           email: profile.emails[0].value.toLowerCase(),
           avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
-          isVerified: false, // Strict pin entry wall is now active
+          isVerified: false, 
           authMethod: 'google',
           verificationCode: code,
           verificationExpires: expires
@@ -72,12 +70,10 @@ const configurePassport = () => {
           await sendVerificationEmail(user.email, user.username, code);
         } catch (emailError) {
           console.error('Google onboarding email dispatch failed. Executing rollback:', emailError);
-          // Delete the orphaned document instantly so the database stays clean
           await User.findByIdAndDelete(user._id); 
           return done(emailError, null);
         }
 
-        // Complete the authentication process successfully
         return done(null, user);
       } catch (err) {
         console.error('Google Strategy Error:', err);
@@ -86,24 +82,9 @@ const configurePassport = () => {
     }
   ));
 
-  // (Your LocalStrategy configuration follows below...)
-
-      // Create default workspace
-      const Workspace = require('../models/Workspace');
-      await Workspace.create({
-        user: user._id,
-        name: 'My First Workspace',
-        description: 'Your default workspace. Rename it anytime.',
-        icon: 'layers',
-        isDefault: true,
-      });
-      return done(null, user);
-    } catch (err) {
-      return done(err, null);
-    }
-  }));
-
-  // Local strategy
+  // ==========================================
+  // LOCAL STRATEGY
+  // ==========================================
   passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
     try {
       const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
