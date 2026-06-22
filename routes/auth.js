@@ -20,7 +20,8 @@ const authLimiter = rateLimit({
 // SIGN IN ROUTES
 // ==========================================
 router.get('/signin', requireGuest, (req, res) => {
-  res.render('auth/signin', { title: 'Sign In – Axiom Cloud' });
+  // Pass error: null so EJS doesn't crash on initial load
+  res.render('auth/signin', { title: 'Sign In – Axiom Cloud', error: null });
 });
 
 router.post('/signin', requireGuest, authLimiter, authController.signin);
@@ -29,7 +30,8 @@ router.post('/signin', requireGuest, authLimiter, authController.signin);
 // SIGN UP ROUTES
 // ==========================================
 router.get('/signup', requireGuest, (req, res) => {
-  res.render('auth/signup', { title: 'Get Started – Axiom Cloud' });
+  // Pass error: null so EJS doesn't crash on initial load
+  res.render('auth/signup', { title: 'Get Started – Axiom Cloud', error: null });
 });
 
 router.post('/signup', requireGuest, authLimiter, authController.signup);
@@ -37,13 +39,10 @@ router.post('/signup', requireGuest, authLimiter, authController.signup);
 // ==========================================
 // GOOGLE OAUTH ROUTES
 // ==========================================
-
-// 1. Kick off the Google login handshake
 router.get('/google', passport.authenticate('google', { 
   scope: ['profile', 'email'] 
 }));
 
-// 2. Handle the response back from Google and go straight to Dashboard
 router.get('/google/callback',
   passport.authenticate('google', { 
     successRedirect: '/dashboard',
