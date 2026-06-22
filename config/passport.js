@@ -3,6 +3,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Workspace = require('../models/Workspace');
 // Add these two lines to import your email service and code generator helper:
 const { sendVerificationEmail } = require('../utils/email');
 const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
