@@ -43,8 +43,16 @@ router.post('/save', requireAuth, async (req, res) => {
       if (!/^[a-zA-Z0-9_]{3,30}$/.test(username.trim())) {
         return res.render('dashboard/profile', { title: 'Profile — Axiom Cloud', activeSection: 'profile', error: 'Invalid username format.', success: null });
       }
-      const exists = await User.findOne({ username: { $regex: new RegExp(`^${username.trim()}$`, 'i'), _id: { $ne: req.user._id } } });
-      if (exists) return res.render('dashboard/profile', { title: 'Profile — Axiom Cloud', activeSection: 'profile', error: 'This username is already taken.', success: null });
+      const exists = await User.findOne({
+  username: {
+    $regex: new RegExp(`^${username}$`, 'i')
+  },
+
+  _id: {
+    $ne: req.user._id
+  }
+});   
+   if (exists) return res.render('dashboard/profile', { title: 'Profile — Axiom Cloud', activeSection: 'profile', error: 'This username is already taken.', success: null });
       updates.username = username.trim();
     }
     if (bio !== undefined) updates.bio = bio.trim().slice(0, 300);
